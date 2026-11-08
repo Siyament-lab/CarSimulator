@@ -34,7 +34,23 @@ var feeds = await thingSpeakService.GetLast100Async ();
 
 if (feeds is not null)
     {
-    Console.WriteLine ($"Antal hämtade avläsningar: {feeds.Count}");
+    // Beräkna statistiken för de hämtade avläsningarna.
+    var analysisService = new TelemetryAnalysisService ();
+    var statistics = analysisService.CalculateStatistics (feeds);
+
+    Console.WriteLine ($"Antal avläsningar: {statistics.TotalReadings}");
+
+    // Visa medelvärden när det finns giltiga värden.
+    Console.WriteLine (statistics.AverageRpm.HasValue
+        ? $"Genomsnittligt varvtal: {statistics.AverageRpm.Value:F1} RPM"
+        : "Genomsnittligt varvtal: saknar giltiga värden.");
+
+    Console.WriteLine (statistics.AverageSpeed.HasValue
+        ? $"Genomsnittlig hastighet: {statistics.AverageSpeed.Value:F1} km/h"
+        : "Genomsnittlig hastighet: saknar giltiga värden.");
+
+    Console.WriteLine ($"Giltiga RPM-värden: {statistics.ValidRpmReadings}");
+    Console.WriteLine ($"Giltiga hastighetsvärden: {statistics.ValidSpeedReadings}");
     }
 
 Console.WriteLine ("Tryck på valfri tangent för att avsluta.");

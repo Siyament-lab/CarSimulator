@@ -28,13 +28,13 @@ public class CarSimulationService
         _thingSpeakService = thingSpeakService;
         }
 
-    // Kör simuleringen under den angivna restiden.
-    public async Task StartSimulation ()
+    // Kör simuleringen under den angivna restiden eller tills användaren avbryter.
+    public async Task StartSimulation (CancellationToken cancellationToken= default)
         {
         Console.WriteLine ("Startar bilsimulering...");
         var startTime = DateTime.UtcNow;
 
-        while (true)
+        while (!cancellationToken.IsCancellationRequested)
             {
             var elapsedTime = DateTime.UtcNow - startTime;
 
@@ -66,8 +66,17 @@ public class CarSimulationService
             // Skicka aktuell avläsning innan vi väntar på nästa.
             await _thingSpeakService.SendTelemetryAsync (data);
 
-            // Vänta mellan avläsningarna utan att blockera tråden.
-            await Task.Delay (TimeSpan.FromSeconds (UpdateIntervalSeconds));
+            // Avbryt väntan när användaren trycker på Esc.
+            try
+                {
+                await Task.Delay (
+                    TimeSpan.FromSeconds (UpdateIntervalSeconds),
+                    cancellationToken);
+                }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                {
+                break;
+                }
             }
         }
 

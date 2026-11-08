@@ -30,7 +30,30 @@ using var httpClient = new HttpClient
 var thingSpeakService = new ThingSpeakService (httpClient, writeApiKey);
 var simulator = new CarSimulationService (thingSpeakService);
 
-await simulator.StartSimulation ();
+// Skapa en signal som kan stoppa simuleringen.
+using var cancellation = new CancellationTokenSource ();
+
+Console.WriteLine ("Tryck på Esc för att avbryta simuleringen.");
+
+// Starta simuleringen och kontrollera tangentbordet medan den körs.
+var simulationTask = simulator.StartSimulation (cancellation.Token);
+
+while (!simulationTask.IsCompleted)
+    {
+    if (Console.KeyAvailable &&
+        Console.ReadKey (intercept: true).Key == ConsoleKey.Escape)
+        {
+        Console.WriteLine ("Avbryter simuleringen...");
+        cancellation.Cancel ();
+        break;
+        }
+
+    // Kontrollera tangentbordet utan att belasta processorn i onödan.
+    await Task.Delay (100);
+    }
+
+// Låt simuleringen avslutas innan programmet fortsätter.
+await simulationTask;
 
 // Håll konsolen öppen efter avslutad simulering.
 Console.WriteLine ("Tryck på valfri tangent för att avsluta.");

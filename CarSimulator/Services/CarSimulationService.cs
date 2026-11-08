@@ -20,6 +20,14 @@ public class CarSimulationService
 
     private readonly Random _random = new Random ();
 
+    // Tjänsten som skickar bilens data till ThingSpeak.
+    private readonly ThingSpeakService _thingSpeakService;
+
+    public CarSimulationService ( ThingSpeakService thingSpeakService )
+        {
+        _thingSpeakService = thingSpeakService;
+        }
+
     // Kör simuleringen under den angivna restiden.
     public async Task StartSimulation ()
         {
@@ -54,6 +62,9 @@ public class CarSimulationService
                 $"RPM: {data.Rpm:F0} | " +
                 $"Bränsle: {data.FuelLevel:F1}% | " +
                 $"Motortemperatur: {data.EngineTemp:F1} °C");
+
+            // Skicka aktuell avläsning innan vi väntar på nästa.
+            await _thingSpeakService.SendTelemetryAsync (data);
 
             // Vänta mellan avläsningarna utan att blockera tråden.
             await Task.Delay (TimeSpan.FromSeconds (UpdateIntervalSeconds));

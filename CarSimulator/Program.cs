@@ -20,8 +20,16 @@ if (string.IsNullOrWhiteSpace (writeApiKey))
 
 Console.WriteLine ("ThingSpeak API-nyckel har lästs in.");
 
-// Skapa och starta bilsimuleringen.
-var simulator = new CarSimulationService ();
+// Återanvänd samma HTTP-klient under hela körningen.
+using var httpClient = new HttpClient
+    {
+    Timeout = TimeSpan.FromSeconds (10)
+    };
+
+// Koppla samman tjänsten för ThingSpeak med bilsimuleringen.
+var thingSpeakService = new ThingSpeakService (httpClient, writeApiKey);
+var simulator = new CarSimulationService (thingSpeakService);
+
 await simulator.StartSimulation ();
 
 // Håll konsolen öppen efter avslutad simulering.
